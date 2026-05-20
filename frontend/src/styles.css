@@ -549,7 +549,6 @@ select option { background: var(--bg-card); }
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-}
   background: var(--bg-input);
   border-radius: var(--radius);
   padding: 0.5rem 0.6rem;

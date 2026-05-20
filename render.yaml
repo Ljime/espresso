@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: espresso-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false        # you'll paste this in the Render dashboard
+      - key: FRONTEND_URL
+        sync: false        # paste your Netlify URL here after deploying frontend
