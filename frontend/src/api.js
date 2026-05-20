@@ -1,7 +1,7 @@
-const BASE = '/api';
+const BASE = import.meta.env.PROD ? import.meta.env.VITE_API_URL : '';
 
 async function request(method, path, body) {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${BASE}/api${path}`, {
     method,
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
