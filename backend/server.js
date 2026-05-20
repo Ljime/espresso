@@ -13,7 +13,8 @@ const PORT = process.env.PORT || 3001;
 // Set DATABASE_URL in your environment / Render dashboard
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: { rejectUnauthorized: false },
+  family: 4
 });
 
 // ── Schema bootstrap ─────────────────────────────────────────────────────────
