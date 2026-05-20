@@ -4,6 +4,8 @@ import pg from 'pg';
 import { randomUUID } from 'crypto';
 import dotenv from "dotenv";
 dotenv.config();
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
 
 const { Pool } = pg;
 const app = express();
