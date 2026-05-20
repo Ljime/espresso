@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3001;
 // ── DB Pool ──────────────────────────────────────────────────────────────────
 // Set DATABASE_URL in your environment / Render dashboard
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || "postgresql://postgres:coolbeansespresso1!@db.coizzoagbainviqfkqfi.supabase.co:5432/postgres",
   ssl: { rejectUnauthorized: false },
   family: 4
 });
