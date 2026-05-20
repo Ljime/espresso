@@ -44,7 +44,7 @@ async function initDB() {
 
 // ── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://coolbeansespresso.netlify.app/' || '*',
+  origin: [process.env.FRONTEND_URL, 'https://coolbeansespresso.netlify.app/', 'http://localhost:5173']
 }));
 app.use(express.json());
 
