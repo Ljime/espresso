@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import pg from 'pg';
 import { randomUUID } from 'crypto';
+import dotenv from "dotenv";
+dotenv.config();
 
 const { Pool } = pg;
 const app = express();
@@ -37,7 +39,7 @@ async function initDB() {
 
 // ── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: 'https://coolbeansespresso.netlify.app/' || process.env.FRONTEND_URL || '*',
+  origin: process.env.FRONTEND_URL || 'https://coolbeansespresso.netlify.app/' || '*',
 }));
 app.use(express.json());
 
