@@ -1,0 +1,127 @@
+{
+  "profiles": [
+    {
+      "id": "75673f20-4227-4349-80bb-cac8051bfbc3",
+      "created_at": "2026-05-20T04:05:58.314Z",
+      "name": "Test1 ",
+      "roaster": "Me",
+      "origin": "Macoco",
+      "producer": "yes",
+      "location": "toronto",
+      "elevation": "100",
+      "variety": "heirloom",
+      "process": "Washed",
+      "roast_date": "2026-05-20",
+      "roast_level": "Very Dark",
+      "brew_defaults": {
+        "dose_weight": "1",
+        "grind_level": "1",
+        "water_temp": "3",
+        "pressure": "2",
+        "pull_time": "3",
+        "shot_weight": "1"
+      },
+      "components": [
+        {
+          "component_profile_id": "dasdas",
+          "weight_g": "132",
+          "percentage": 100
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "id": "726411a3-92fc-46d2-902f-12bf78c41890",
+      "created_at": "2026-05-20T04:06:56.015Z",
+      "profile_id": "75673f20-4227-4349-80bb-cac8051bfbc3",
+      "brew_actuals": {
+        "dose_weight": "12",
+        "grind_level": "12",
+        "water_temp": "12",
+        "pressure": "12",
+        "pull_time": "12",
+        "shot_weight": "12",
+        "yield_ratio": 1
+      },
+      "crema_colour": "#CC7722",
+      "crema_thickness": 4,
+      "crema_persistence": 1,
+      "crema_tiger_striping": true,
+      "shot_colour": "#704214",
+      "fragrance_descriptors": [
+        {
+          "sca_id": "raspberry",
+          "label": "Raspberry",
+          "color": "#E05C5C",
+          "l1": "Fruity",
+          "l2": "Berry",
+          "intensity": 3,
+          "timestamp": "2026-05-20T04:06:21.127Z"
+        },
+        {
+          "sca_id": "fermented",
+          "label": "Fermented",
+          "color": "#A8C050",
+          "l1": "Sour/Fermented",
+          "l2": "Alcohol/Fermented",
+          "intensity": 3,
+          "timestamp": "2026-05-20T04:06:22.963Z"
+        },
+        {
+          "sca_id": "overripe",
+          "label": "Overripe",
+          "color": "#A8C050",
+          "l1": "Sour/Fermented",
+          "l2": "Alcohol/Fermented",
+          "intensity": 3,
+          "timestamp": "2026-05-20T04:06:24.564Z"
+        }
+      ],
+      "fragrance_notes": "",
+      "aroma_descriptors": [
+        {
+          "sca_id": "prune",
+          "label": "Prune",
+          "color": "#E05C5C",
+          "l1": "Fruity",
+          "l2": "Dried Fruit",
+          "intensity": 3,
+          "timestamp": "2026-05-20T04:06:28.370Z"
+        },
+        {
+          "sca_id": "whiskey",
+          "label": "Whiskey",
+          "color": "#A8C050",
+          "l1": "Sour/Fermented",
+          "l2": "Alcohol/Fermented",
+          "intensity": 3,
+          "timestamp": "2026-05-20T04:06:31.031Z"
+        }
+      ],
+      "aroma_notes": "great",
+      "flavour_descriptors": [],
+      "flavour_notes": "321312",
+      "finish_descriptors": [
+        {
+          "sca_id": "overripe",
+          "label": "Overripe",
+          "color": "#A8C050",
+          "l1": "Sour/Fermented",
+          "l2": "Alcohol/Fermented",
+          "intensity": 3,
+          "timestamp": "2026-05-20T04:06:40.892Z"
+        }
+      ],
+      "finish_notes": "dsadas",
+      "mouthfeel": {
+        "weight": 9,
+        "astringency": 10,
+        "temperature": 10,
+        "texture": ""
+      },
+      "final_notes": "dsadsa",
+      "hedonic_score": 10
+    }
+  ]
+}
