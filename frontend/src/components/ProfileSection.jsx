@@ -108,14 +108,41 @@ export default function ProfileSection({ profile, onChange }) {
 
       {/* Blend Components */}
       <div className="subsection">
-        <h3 className="subsection-title">Blend Components <span className="muted">(optional)</span></h3>
+        <h3 className="subsection-title">Blend Components (Listing Profiles)</h3>
+
+        <div className="blend-total-row">
+          <Field label="Total Blend Dose (g)">
+            <input
+              type="number" step="0.1" min="0"
+              value={profile.blend_total_g || ''}
+              onChange={e => {
+                const total = parseFloat(e.target.value) || 0;
+                // Redistribute existing weights proportionally if we have components with weights
+                const comps = profile.components || [];
+                const currentTotal = comps.reduce((s, c) => s + (parseFloat(c.weight_g) || 0), 0);
+                const updated = comps.map(c => {
+                  const currentW = parseFloat(c.weight_g) || 0;
+                  const newW = currentTotal > 0 && total > 0
+                    ? parseFloat(((currentW / currentTotal) * total).toFixed(2))
+                    : currentW;
+                  const pct = total > 0 ? Math.round((newW / total) * 100) : (c.percentage ?? 0);
+                  return { ...c, weight_g: newW || '', percentage: pct };
+                });
+                onChange({ ...profile, blend_total_g: e.target.value, components: updated });
+              }}
+              placeholder="e.g. 18"
+            />
+          </Field>
+          <span className="blend-total-hint">Sets the dose; component weights scale proportionally</span>
+        </div>
+
         {(profile.components || []).map((comp, idx) => (
           <div key={idx} className="component-row">
             <input
               className="component-name"
               value={comp.component_profile_id || ''}
               onChange={e => updateComponent(idx, 'component_profile_id', e.target.value)}
-              placeholder="Bean / Profile name"
+              placeholder="Profile / bean name"
             />
             <input
               className="component-weight"

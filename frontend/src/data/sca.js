@@ -274,25 +274,25 @@ export const DESCRIPTOR_MAP = buildDescriptorMap();
 
 // Shot colour swatches (Prismacolor-referenced)
 export const SHOT_COLOURS = [
-  { name: 'Black', hex: '#000000' },
-  { name: 'Espresso', hex: '#4B3621' },
-  { name: 'Dark Umber', hex: '#5B3A29' },
-  { name: 'Sepia', hex: '#704214' },
-  { name: 'Dark Brown', hex: '#654321' },
-  { name: 'Sandbar Brown', hex: '#A67B5B' },
-  { name: 'Light Umber', hex: '#A1866F' },
-  { name: 'Orange', hex: '#FF7F00' },
-  { name: 'Yellow Orange', hex: '#FFA500' },
-  { name: 'Lemon Yellow', hex: '#FFF44F' },
+  { no: '935',  name: 'Black',         hex: '#000000' },
+  { no: '1099', name: 'Espresso',      hex: '#4B3621' },
+  { no: '947',  name: 'Dark Umber',    hex: '#5B3A29' },
+  { no: '948',  name: 'Sepia',         hex: '#704214' },
+  { no: '946',  name: 'Dark Brown',    hex: '#654321' },
+  { no: '1094', name: 'Sandbar Brown', hex: '#A67B5B' },
+  { no: '941',  name: 'Light Umber',   hex: '#A1866F' },
+  { no: '918',  name: 'Orange',        hex: '#FF7F00' },
+  { no: '1003', name: 'Yellow Orange', hex: '#FFA500' },
+  { no: '915',  name: 'Lemon Yellow',  hex: '#FFF44F' },
 ];
 
 // Crema colour swatches
 export const CREMA_COLOURS = [
-  { name: 'Sand Ochre', hex: '#C2A878' },
-  { name: 'Yellow Ochre', hex: '#C79F4B' },
-  { name: 'Burnt Ochre', hex: '#CC7722' },
-  { name: 'Goldenrod', hex: '#DAA520' },
-  { name: 'Sunburst Yellow', hex: '#FFDF00' },
+  { no: '940',  name: 'Sand Ochre',      hex: '#C2A878' },
+  { no: '942',  name: 'Yellow Ochre',    hex: '#C79F4B' },
+  { no: '943',  name: 'Burnt Ochre',     hex: '#CC7722' },
+  { no: '1034', name: 'Goldenrod',       hex: '#DAA520' },
+  { no: '917',  name: 'Sunburst Yellow', hex: '#FFDF00' },
 ];
 
 export const ROAST_LEVELS = ['Light', 'Light-Medium', 'Medium', 'Medium-Dark', 'Dark', 'Very Dark'];

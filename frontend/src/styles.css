@@ -189,17 +189,52 @@ select option { background: var(--bg-card); }
 }
 
 /* ── Swatches ────────────────────────────────────────────────────────────── */
-.swatch-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.3rem; }
-.swatch {
+.swatch-row { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.3rem; }
+
+.swatch-tile {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  opacity: 0.75;
+  transition: opacity 0.1s, transform 0.1s;
+}
+.swatch-tile:hover { opacity: 1; transform: translateY(-1px); }
+.swatch-tile--selected { opacity: 1; }
+
+.swatch-color {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
   border-radius: 4px;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: transform 0.1s, border-color 0.1s;
+  position: relative;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow 0.1s;
 }
-.swatch:hover { transform: scale(1.15); }
-.swatch--selected { border-color: var(--cream-light) !important; transform: scale(1.1); }
+.swatch-tile--selected .swatch-color {
+  box-shadow: 0 0 0 2px var(--cream-light);
+}
+.swatch-order {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  line-height: 1;
+}
+.swatch-no {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  line-height: 1;
+}
+.swatch-tile--selected .swatch-no { color: var(--cream-dim); }
 
 /* ── Visual section ──────────────────────────────────────────────────────── */
 .visual-row { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem; }
@@ -219,6 +254,20 @@ select option { background: var(--bg-card); }
   font-size: 0.8rem;
   color: var(--cream-dim);
   min-width: 40px;
+}
+.blend-total-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.blend-total-row .field { min-width: 140px; }
+.blend-total-hint {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-style: italic;
+  padding-bottom: 0.45rem;
 }
 
 /* ── Descriptor Selector ─────────────────────────────────────────────────── */
@@ -297,6 +346,27 @@ select option { background: var(--bg-card); }
   margin-bottom: 0.4rem;
   font-family: var(--font-mono);
 }
+.picker-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.picker-label-row .picker-label { margin-bottom: 0; }
+.btn-add-level {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--cream-dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-add-level:hover { border-color: var(--cream-dim); color: var(--cream); }
 .picker-list {
   display: flex;
   flex-direction: column;

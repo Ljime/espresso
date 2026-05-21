@@ -3,7 +3,6 @@ import { SHOT_COLOURS, CREMA_COLOURS } from '../data/sca.js';
 export default function BrewAndVisualSection({ shot, onChange }) {
   function setActual(field, val) {
     const actuals = { ...shot.brew_actuals, [field]: val };
-    // Auto yield ratio
     if (actuals.dose_weight && actuals.shot_weight) {
       actuals.yield_ratio = (parseFloat(actuals.shot_weight) / parseFloat(actuals.dose_weight)).toFixed(2);
     }
@@ -14,17 +13,27 @@ export default function BrewAndVisualSection({ shot, onChange }) {
     onChange({ ...shot, [field]: val });
   }
 
-  function setMouthfeel(field, val) {
-    onChange({ ...shot, mouthfeel: { ...shot.mouthfeel, [field]: val } });
+  // Dual swatch toggle: stores array of up to 2 hex values
+  function toggleSwatch(field, hex) {
+    const current = shot[field] || [];
+    const arr = Array.isArray(current) ? current : [current].filter(Boolean);
+    if (arr.includes(hex)) {
+      set(field, arr.filter(h => h !== hex));
+    } else if (arr.length < 2) {
+      set(field, [...arr, hex]);
+    } else {
+      // Replace the oldest (first) selection
+      set(field, [arr[1], hex]);
+    }
   }
 
   const yr = shot.brew_actuals?.yield_ratio;
 
   return (
     <>
-      {/* Section 2: Brew Actuals */}
+      {/* Section 03: Brew Actuals */}
       <div className="section">
-        <h2 className="section-title">02 — Brew Actuals</h2>
+        <h2 className="section-title">03 — Brew Actuals</h2>
         <div className="field-grid">
           <Field label="Dose (g)">
             <input type="number" step="0.1" value={shot.brew_actuals?.dose_weight || ''} onChange={e => setActual('dose_weight', e.target.value)} />
@@ -50,18 +59,27 @@ export default function BrewAndVisualSection({ shot, onChange }) {
         )}
       </div>
 
-      {/* Section 3: Visual Inspection */}
+      {/* Section 04: Visual Inspection */}
       <div className="section">
-        <h2 className="section-title">03 — Visual Inspection</h2>
+        <h2 className="section-title">04 — Visual Inspection</h2>
+        <p className="section-help">Select up to two swatches per colour to capture blended tones.</p>
 
         <div className="visual-row">
           <div className="visual-col">
             <label className="field-label">Crema Colour</label>
-            <SwatchPicker swatches={CREMA_COLOURS} selected={shot.crema_colour} onSelect={hex => set('crema_colour', hex)} />
+            <SwatchPicker
+              swatches={CREMA_COLOURS}
+              selected={shot.crema_colour}
+              onToggle={hex => toggleSwatch('crema_colour', hex)}
+            />
           </div>
           <div className="visual-col">
             <label className="field-label">Shot Colour</label>
-            <SwatchPicker swatches={SHOT_COLOURS} selected={shot.shot_colour} onSelect={hex => set('shot_colour', hex)} />
+            <SwatchPicker
+              swatches={SHOT_COLOURS}
+              selected={shot.shot_colour}
+              onToggle={hex => toggleSwatch('shot_colour', hex)}
+            />
           </div>
         </div>
 
@@ -92,19 +110,38 @@ function Field({ label, children }) {
   );
 }
 
-function SwatchPicker({ swatches, selected, onSelect }) {
+// Dual-select swatch picker with Prismacolor numbers
+function SwatchPicker({ swatches, selected, onToggle }) {
+  const selectedArr = Array.isArray(selected) ? selected : [selected].filter(Boolean);
+
   return (
     <div className="swatch-row">
-      {swatches.map(s => (
-        <button
-          key={s.hex}
-          className={`swatch ${selected === s.hex ? 'swatch--selected' : ''}`}
-          style={{ background: s.hex, border: s.hex === '#FFF44F' || s.hex === '#FFDF00' ? '1px solid #ccc' : undefined }}
-          title={s.name}
-          onClick={() => onSelect(s.hex)}
-          aria-label={s.name}
-        />
-      ))}
+      {swatches.map((s, i) => {
+        const selIdx = selectedArr.indexOf(s.hex);
+        const isSelected = selIdx >= 0;
+        const selOrder = isSelected ? selIdx + 1 : null; // 1 or 2
+        const isLight = s.hex === '#FFF44F' || s.hex === '#FFDF00' || s.hex === '#FFA500';
+        return (
+          <button
+            key={s.hex}
+            className={`swatch-tile ${isSelected ? 'swatch-tile--selected' : ''}`}
+            onClick={() => onToggle(s.hex)}
+            title={`${s.name} (PC ${s.no})`}
+            aria-label={s.name}
+          >
+            <span
+              className="swatch-color"
+              style={{
+                background: s.hex,
+                border: isLight ? '1px solid #ccc' : undefined,
+              }}
+            >
+              {selOrder && <span className="swatch-order">{selOrder}</span>}
+            </span>
+            <span className="swatch-no">{s.no}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

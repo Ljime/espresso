@@ -1,7 +1,7 @@
 import DescriptorSelector from './DescriptorSelector.jsx';
 
 const LENS_CONFIG = {
-  fragrance: { number: '04', label: 'Fragrance', help: 'Dry grinds — before water contact' },
+  fragrance: { number: '02', label: 'Fragrance', help: 'Dry grinds — before water contact' },
   aroma:     { number: '05', label: 'Aroma',     help: 'Wet grounds / rising steam' },
   flavour:   { number: '06', label: 'Flavour',   help: 'On the palate — first impression' },
   finish:    { number: '07', label: 'Finish',    help: 'Aftertaste — what lingers' },

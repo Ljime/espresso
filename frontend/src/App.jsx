@@ -148,8 +148,8 @@ export default function App() {
             )}
           </div>
 
-          <BrewAndVisualSection shot={shot} onChange={setShot} />
           <SensorySection lens="fragrance" shot={shot} onChange={setShot} />
+          <BrewAndVisualSection shot={shot} onChange={setShot} />
           <SensorySection lens="aroma" shot={shot} onChange={setShot} />
           <SensorySection lens="flavour" shot={shot} onChange={setShot} />
           <SensorySection lens="finish" shot={shot} onChange={setShot} />
