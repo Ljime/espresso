@@ -202,5 +202,183 @@ app.get('/api/health', async (_, res) => {
 
 // ── Start ────────────────────────────────────────────────────────────────────
 initDB()
+  .then(() => initColoursTable())
   .then(() => app.listen(PORT, () => console.log(`Espresso API on http://localhost:${PORT}`)))
   .catch(e => { console.error('DB init failed:', e); process.exit(1); });
+
+// ── Custom Colours ────────────────────────────────────────────────────────────
+async function initColoursTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_colours (
+      id         TEXT PRIMARY KEY,
+      list       TEXT NOT NULL CHECK (list IN ('shot', 'crema')),
+      no         TEXT NOT NULL,
+      name       TEXT NOT NULL,
+      hex        TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      deleted_at TIMESTAMPTZ,
+      UNIQUE(list, no)
+    );
+  `);
+}
+
+// GET /api/colours — all active custom colours
+app.get('/api/colours', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, list, no, name, hex, created_at
+       FROM custom_colours WHERE deleted_at IS NULL ORDER BY created_at ASC`
+    );
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/colours — add a custom colour
+app.post('/api/colours', async (req, res) => {
+  const { list, no, name, hex } = req.body;
+  if (!['shot','crema'].includes(list)) return res.status(400).json({ error: 'list must be shot or crema' });
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return res.status(400).json({ error: 'Invalid hex value' });
+  try {
+    const id = randomUUID();
+    const { rows } = await pool.query(
+      `INSERT INTO custom_colours (id, list, no, name, hex)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, list, no, name, hex, created_at`,
+      [id, list, no.trim(), name.trim(), hex.toUpperCase()]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) {
+    if (e.code === '23505') return res.status(409).json({ error: `PC ${no} already exists in ${list} list` });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/colours/:list/:hex — soft-delete (preserves export history)
+app.delete('/api/colours/:list/:hex', async (req, res) => {
+  const hex = decodeURIComponent(req.params.hex);
+  try {
+    await pool.query(
+      `UPDATE custom_colours SET deleted_at = NOW()
+       WHERE list = $1 AND hex = $2 AND deleted_at IS NULL`,
+      [req.params.list, hex]
+    );
+    res.json({ deleted: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Export ────────────────────────────────────────────────────────────────────
+app.get('/api/export', async (req, res) => {
+  const { scope, format, profile_id, date_from, date_to } = req.query;
+
+  try {
+    let shotRows, profileIds;
+
+    if (scope === 'last10' || scope === 'last20') {
+      const limit = scope === 'last10' ? 10 : 20;
+      const r = await pool.query(`SELECT data FROM shots ORDER BY created_at DESC LIMIT $1`, [limit]);
+      shotRows = r.rows.map(r => r.data);
+    } else if (scope === 'profile') {
+      const r = await pool.query(`SELECT data FROM shots WHERE profile_id = $1 ORDER BY created_at DESC`, [profile_id]);
+      shotRows = r.rows.map(r => r.data);
+    } else if (scope === 'daterange') {
+      const r = await pool.query(
+        `SELECT data FROM shots WHERE created_at >= $1 AND created_at <= $2::date + interval '1 day' ORDER BY created_at DESC`,
+        [date_from, date_to]
+      );
+      shotRows = r.rows.map(r => r.data);
+    } else { // all
+      const r = await pool.query(`SELECT data FROM shots ORDER BY created_at DESC`);
+      shotRows = r.rows.map(r => r.data);
+    }
+
+    // Collect referenced profile IDs (including component profiles)
+    profileIds = new Set(shotRows.map(s => s.profile_id).filter(Boolean));
+    if (scope === 'profile' && profile_id) profileIds.add(profile_id);
+
+    // Fetch profiles
+    let profileRows = [];
+    if (profileIds.size > 0) {
+      const ids = [...profileIds];
+      const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+      const pr = await pool.query(`SELECT data FROM profiles WHERE id IN (${placeholders})`, ids);
+      profileRows = pr.rows.map(r => r.data);
+
+      // Also fetch any component profiles (one level deep)
+      const componentIds = new Set();
+      for (const p of profileRows) {
+        for (const c of (p.components || [])) {
+          if (c.component_profile_id && !profileIds.has(c.component_profile_id)) {
+            componentIds.add(c.component_profile_id);
+          }
+        }
+      }
+      if (componentIds.size > 0) {
+        const cids = [...componentIds];
+        const cp = ids.map((_, i) => `$${i + 1}`).join(',');
+        const cr = await pool.query(`SELECT data FROM profiles WHERE id IN (${cids.map((_, i) => `$${i+1}`).join(',')})`, cids);
+        profileRows.push(...cr.rows.map(r => r.data));
+      }
+    }
+
+    // Fetch custom colours for export (include deleted ones for full fidelity)
+    const colourRes = await pool.query(`SELECT list, no, name, hex FROM custom_colours ORDER BY created_at ASC`);
+    const customColours = colourRes.rows;
+
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+    if (format === 'tsv') {
+      // TSV: one row per shot, profile fields repeated
+      const headers = [
+        'shot_id','shot_date','profile_id','profile_name','roaster','origin','process',
+        'roast_date','roast_level','variety','elevation',
+        'dose_weight','grind_level','water_temp','pressure_max','pressure_min',
+        'pull_time','shot_weight','yield_ratio',
+        'crema_colour','shot_colour','crema_thickness','crema_persistence','crema_tiger_striping',
+        'fragrance_descriptors','fragrance_notes',
+        'aroma_descriptors','aroma_notes',
+        'flavour_descriptors','flavour_notes',
+        'finish_descriptors','finish_notes',
+        'mouthfeel_weight','mouthfeel_astringency','mouthfeel_temperature','mouthfeel_texture',
+        'final_notes','hedonic_score'
+      ];
+
+      const profileMap = Object.fromEntries(profileRows.map(p => [p.id, p]));
+
+      const tsvRows = shotRows.map(s => {
+        const p = profileMap[s.profile_id] || {};
+        const ba = s.brew_actuals || {};
+        const mf = s.mouthfeel || {};
+        const fmtDescriptors = arr => (arr || []).map(d => `${d.label}(${d.intensity})`).join('; ');
+        const fmtColour = c => Array.isArray(c) ? c.join('+') : (c || '');
+        return [
+          s.id, s.created_at, s.profile_id, p.name||'', p.roaster||'', p.origin||'', p.process||'',
+          p.roast_date||'', p.roast_level||'', p.variety||'', p.elevation||'',
+          ba.dose_weight||'', ba.grind_level||'', ba.water_temp||'', ba.pressure_max||'', ba.pressure_min||'',
+          ba.pull_time||'', ba.shot_weight||'', ba.yield_ratio||'',
+          fmtColour(s.crema_colour), fmtColour(s.shot_colour),
+          s.crema_thickness||'', s.crema_persistence||'', s.crema_tiger_striping ? 'yes' : 'no',
+          fmtDescriptors(s.fragrance_descriptors), s.fragrance_notes||'',
+          fmtDescriptors(s.aroma_descriptors), s.aroma_notes||'',
+          fmtDescriptors(s.flavour_descriptors), s.flavour_notes||'',
+          fmtDescriptors(s.finish_descriptors), s.finish_notes||'',
+          mf.weight||'', mf.astringency||'', mf.temperature||'', mf.texture||'',
+          s.final_notes||'', s.hedonic_score||''
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join('\t');
+      });
+
+      const tsv = [headers.join('\t'), ...tsvRows].join('\n');
+      res.setHeader('Content-Type', 'text/tab-separated-values');
+      res.setHeader('Content-Disposition', `attachment; filename="tasting-data-${date}.tsv"`);
+      return res.send(tsv);
+    }
+
+    // JSON
+    const payload = { exported_at: new Date().toISOString(), profiles: profileRows, shots: shotRows, custom_colours: customColours };
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="tasting-data-${date}.json"`);
+    return res.send(JSON.stringify(payload, null, 2));
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});

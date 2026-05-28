@@ -1,7 +1,11 @@
-const BASE = import.meta.env.PROD ? import.meta.env.VITE_API_URL : '';
+// In development, Vite proxies /api → localhost:3001
+// In production, set VITE_API_URL to your Railway backend URL (no trailing slash)
+const BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
 
 async function request(method, path, body) {
-  const res = await fetch(`${BASE}api${path}`, {
+  const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
@@ -14,6 +18,7 @@ async function request(method, path, body) {
 }
 
 export const api = {
+  base: BASE,
   // Profiles
   listProfiles: () => request('GET', '/profiles'),
   getProfile: (id) => request('GET', `/profiles/${id}`),
@@ -25,4 +30,8 @@ export const api = {
     request('GET', profileId ? `/shots?profile_id=${profileId}` : '/shots'),
   getShot: (id) => request('GET', `/shots/${id}`),
   createShot: (data) => request('POST', '/shots', data),
+  // Custom colours
+  listColours: () => request('GET', '/colours'),
+  addColour: (list, colour) => request('POST', '/colours', { list, ...colour }),
+  deleteColour: (list, hex) => request('DELETE', `/colours/${list}/${encodeURIComponent(hex)}`),
 };

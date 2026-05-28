@@ -1,6 +1,13 @@
+import { useState } from 'react';
 import { SHOT_COLOURS, CREMA_COLOURS } from '../data/sca.js';
+import MoreColoursPanel from './MoreColoursPanel.jsx';
 
-export default function BrewAndVisualSection({ shot, onChange }) {
+const CURATED_SHOT_HEX = new Set(SHOT_COLOURS.map(s => s.hex));
+const CURATED_CREMA_HEX = new Set(CREMA_COLOURS.map(s => s.hex));
+
+export default function BrewAndVisualSection({ shot, onChange, customColours, onAddColour, onDeleteColour }) {
+  const [moreColoursFor, setMoreColoursFor] = useState(null); // 'shot' | 'crema' | null
+
   function setActual(field, val) {
     const actuals = { ...shot.brew_actuals, [field]: val };
     if (actuals.dose_weight && actuals.shot_weight) {
@@ -13,7 +20,6 @@ export default function BrewAndVisualSection({ shot, onChange }) {
     onChange({ ...shot, [field]: val });
   }
 
-  // Dual swatch toggle: stores array of up to 2 hex values
   function toggleSwatch(field, hex) {
     const current = shot[field] || [];
     const arr = Array.isArray(current) ? current : [current].filter(Boolean);
@@ -22,12 +28,14 @@ export default function BrewAndVisualSection({ shot, onChange }) {
     } else if (arr.length < 2) {
       set(field, [...arr, hex]);
     } else {
-      // Replace the oldest (first) selection
       set(field, [arr[1], hex]);
     }
   }
 
   const yr = shot.brew_actuals?.yield_ratio;
+
+  const shotSwatches = [...SHOT_COLOURS, ...(customColours?.shot || [])];
+  const cremaSwatches = [...CREMA_COLOURS, ...(customColours?.crema || [])];
 
   return (
     <>
@@ -44,8 +52,11 @@ export default function BrewAndVisualSection({ shot, onChange }) {
           <Field label="Water Temp (°C)">
             <input type="number" value={shot.brew_actuals?.water_temp || ''} onChange={e => setActual('water_temp', e.target.value)} />
           </Field>
-          <Field label="Pressure (bar)">
-            <input type="number" step="0.5" value={shot.brew_actuals?.pressure || ''} onChange={e => setActual('pressure', e.target.value)} />
+          <Field label="Pressure Max (bar)">
+            <input type="number" step="0.5" value={shot.brew_actuals?.pressure_max || ''} onChange={e => setActual('pressure_max', e.target.value)} />
+          </Field>
+          <Field label="Pressure Min (bar)">
+            <input type="number" step="0.5" value={shot.brew_actuals?.pressure_min || ''} onChange={e => setActual('pressure_min', e.target.value)} />
           </Field>
           <Field label="Pull Time (s)">
             <input type="number" value={shot.brew_actuals?.pull_time || ''} onChange={e => setActual('pull_time', e.target.value)} />
@@ -54,9 +65,7 @@ export default function BrewAndVisualSection({ shot, onChange }) {
             <input type="number" step="0.1" value={shot.brew_actuals?.shot_weight || ''} onChange={e => setActual('shot_weight', e.target.value)} />
           </Field>
         </div>
-        {yr && (
-          <div className="yield-badge">Yield ratio: <strong>{yr}:1</strong></div>
-        )}
+        {yr && <div className="yield-badge">Yield ratio: <strong>{yr}:1</strong></div>}
       </div>
 
       {/* Section 04: Visual Inspection */}
@@ -68,18 +77,40 @@ export default function BrewAndVisualSection({ shot, onChange }) {
           <div className="visual-col">
             <label className="field-label">Crema Colour</label>
             <SwatchPicker
-              swatches={CREMA_COLOURS}
+              swatches={cremaSwatches}
+              curatedIds={CURATED_CREMA_HEX}
               selected={shot.crema_colour}
               onToggle={hex => toggleSwatch('crema_colour', hex)}
+              onMoreColours={() => setMoreColoursFor(moreColoursFor === 'crema' ? null : 'crema')}
             />
+            {moreColoursFor === 'crema' && (
+              <MoreColoursPanel
+                list={cremaSwatches}
+                curatedIds={CURATED_CREMA_HEX}
+                onAdd={c => { onAddColour('crema', c); }}
+                onDelete={hex => onDeleteColour('crema', hex)}
+                onClose={() => setMoreColoursFor(null)}
+              />
+            )}
           </div>
           <div className="visual-col">
             <label className="field-label">Shot Colour</label>
             <SwatchPicker
-              swatches={SHOT_COLOURS}
+              swatches={shotSwatches}
+              curatedIds={CURATED_SHOT_HEX}
               selected={shot.shot_colour}
               onToggle={hex => toggleSwatch('shot_colour', hex)}
+              onMoreColours={() => setMoreColoursFor(moreColoursFor === 'shot' ? null : 'shot')}
             />
+            {moreColoursFor === 'shot' && (
+              <MoreColoursPanel
+                list={shotSwatches}
+                curatedIds={CURATED_SHOT_HEX}
+                onAdd={c => { onAddColour('shot', c); }}
+                onDelete={hex => onDeleteColour('shot', hex)}
+                onClose={() => setMoreColoursFor(null)}
+              />
+            )}
           </div>
         </div>
 
@@ -110,38 +141,28 @@ function Field({ label, children }) {
   );
 }
 
-// Dual-select swatch picker with Prismacolor numbers
-function SwatchPicker({ swatches, selected, onToggle }) {
+function SwatchPicker({ swatches, curatedIds, selected, onToggle, onMoreColours }) {
   const selectedArr = Array.isArray(selected) ? selected : [selected].filter(Boolean);
-
   return (
-    <div className="swatch-row">
-      {swatches.map((s, i) => {
-        const selIdx = selectedArr.indexOf(s.hex);
-        const isSelected = selIdx >= 0;
-        const selOrder = isSelected ? selIdx + 1 : null; // 1 or 2
-        const isLight = s.hex === '#FFF44F' || s.hex === '#FFDF00' || s.hex === '#FFA500';
-        return (
-          <button
-            key={s.hex}
-            className={`swatch-tile ${isSelected ? 'swatch-tile--selected' : ''}`}
-            onClick={() => onToggle(s.hex)}
-            title={`${s.name} (PC ${s.no})`}
-            aria-label={s.name}
-          >
-            <span
-              className="swatch-color"
-              style={{
-                background: s.hex,
-                border: isLight ? '1px solid #ccc' : undefined,
-              }}
-            >
-              {selOrder && <span className="swatch-order">{selOrder}</span>}
-            </span>
-            <span className="swatch-no">{s.no}</span>
-          </button>
-        );
-      })}
+    <div>
+      <div className="swatch-row">
+        {swatches.map(s => {
+          const selIdx = selectedArr.indexOf(s.hex);
+          const isSelected = selIdx >= 0;
+          const selOrder = isSelected ? selIdx + 1 : null;
+          const isLight = ['#FFF44F','#FFDF00','#FFA500'].includes(s.hex);
+          return (
+            <button key={s.hex} className={`swatch-tile ${isSelected ? 'swatch-tile--selected' : ''}`}
+              onClick={() => onToggle(s.hex)} title={`${s.name} (PC ${s.no})`} aria-label={s.name}>
+              <span className="swatch-color" style={{ background: s.hex, border: isLight ? '1px solid #ccc' : undefined }}>
+                {selOrder && <span className="swatch-order">{selOrder}</span>}
+              </span>
+              <span className="swatch-no">{s.no}</span>
+            </button>
+          );
+        })}
+      </div>
+      <button className="btn-more-colours" onClick={onMoreColours}>+ More colours</button>
     </div>
   );
 }

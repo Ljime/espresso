@@ -1,6 +1,6 @@
 import { ROAST_LEVELS, PROCESSES } from '../data/sca.js';
 
-export default function ProfileSection({ profile, onChange }) {
+export default function ProfileSection({ profile, onChange, profiles = [] }) {
   function set(field, val) {
     onChange({ ...profile, [field]: val });
   }
@@ -12,14 +12,30 @@ export default function ProfileSection({ profile, onChange }) {
   function addComponent() {
     onChange({
       ...profile,
-      components: [...(profile.components || []), { component_profile_id: '', weight_g: '' }]
+      components: [...(profile.components || []), { component_profile_id: '', component_profile_name: '', weight_g: '' }]
     });
   }
 
   function updateComponent(idx, field, val) {
     const comps = [...(profile.components || [])];
     comps[idx] = { ...comps[idx], [field]: val };
-    // Recalculate percentages
+    const total = comps.reduce((sum, c) => sum + (parseFloat(c.weight_g) || 0), 0);
+    const withPct = comps.map(c => ({
+      ...c,
+      percentage: total > 0 ? Math.round((parseFloat(c.weight_g) || 0) / total * 100) : 0
+    }));
+    onChange({ ...profile, components: withPct });
+  }
+
+  function selectComponentProfile(idx, profileId) {
+    const picked = profiles.find(p => p.id === profileId);
+    const comps = [...(profile.components || [])];
+    comps[idx] = {
+      ...comps[idx],
+      component_profile_id: profileId,
+      component_profile_name: picked ? (picked.name || picked.origin || 'Unnamed') : '',
+    };
+    // Recalculate percentages after profile change
     const total = comps.reduce((sum, c) => sum + (parseFloat(c.weight_g) || 0), 0);
     const withPct = comps.map(c => ({
       ...c,
@@ -94,8 +110,11 @@ export default function ProfileSection({ profile, onChange }) {
           <Field label="Water Temp (°C)">
             <input type="number" value={profile.brew_defaults?.water_temp || ''} onChange={e => setDefault('water_temp', e.target.value)} />
           </Field>
-          <Field label="Pressure (bar)">
-            <input type="number" step="0.5" value={profile.brew_defaults?.pressure || ''} onChange={e => setDefault('pressure', e.target.value)} />
+          <Field label="Pressure Max (bar)">
+            <input type="number" step="0.5" value={profile.brew_defaults?.pressure_max || ''} onChange={e => setDefault('pressure_max', e.target.value)} />
+          </Field>
+          <Field label="Pressure Min (bar)">
+            <input type="number" step="0.5" value={profile.brew_defaults?.pressure_min || ''} onChange={e => setDefault('pressure_min', e.target.value)} />
           </Field>
           <Field label="Pull Time (s)">
             <input type="number" value={profile.brew_defaults?.pull_time || ''} onChange={e => setDefault('pull_time', e.target.value)} />
@@ -117,7 +136,6 @@ export default function ProfileSection({ profile, onChange }) {
               value={profile.blend_total_g || ''}
               onChange={e => {
                 const total = parseFloat(e.target.value) || 0;
-                // Redistribute existing weights proportionally if we have components with weights
                 const comps = profile.components || [];
                 const currentTotal = comps.reduce((s, c) => s + (parseFloat(c.weight_g) || 0), 0);
                 const updated = comps.map(c => {
@@ -136,25 +154,48 @@ export default function ProfileSection({ profile, onChange }) {
           <span className="blend-total-hint">Sets the dose; component weights scale proportionally</span>
         </div>
 
-        {(profile.components || []).map((comp, idx) => (
-          <div key={idx} className="component-row">
-            <input
-              className="component-name"
-              value={comp.component_profile_id || ''}
-              onChange={e => updateComponent(idx, 'component_profile_id', e.target.value)}
-              placeholder="Profile / bean name"
-            />
-            <input
-              className="component-weight"
-              type="number" step="0.1"
-              value={comp.weight_g || ''}
-              onChange={e => updateComponent(idx, 'weight_g', e.target.value)}
-              placeholder="g"
-            />
-            <span className="component-pct">{comp.percentage ?? 0}%</span>
-            <button className="btn-icon" onClick={() => removeComponent(idx)}>×</button>
-          </div>
-        ))}
+        {(profile.components || []).map((comp, idx) => {
+          const linkedProfile = profiles.find(p => p.id === comp.component_profile_id);
+          const displayName = linkedProfile
+            ? (linkedProfile.roaster ? `${linkedProfile.roaster} — ` : '') + (linkedProfile.name || linkedProfile.origin || 'Unnamed')
+            : comp.component_profile_name || null;
+
+          return (
+            <div key={idx} className="component-row">
+              <div className="component-profile-col">
+                <select
+                  className="component-profile-select"
+                  value={comp.component_profile_id || ''}
+                  onChange={e => selectComponentProfile(idx, e.target.value)}
+                >
+                  <option value="">— Select profile —</option>
+                  {profiles
+                    .filter(p => p.id !== profile.id)
+                    .map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.roaster ? `${p.roaster} — ` : ''}{p.name || p.origin || 'Unnamed'}
+                      </option>
+                    ))
+                  }
+                </select>
+                {comp.component_profile_id && !linkedProfile && displayName && (
+                  <span className="component-linked-fallback" title="Profile ID saved; loading…">
+                    ↳ {displayName}
+                  </span>
+                )}
+              </div>
+              <input
+                className="component-weight"
+                type="number" step="0.1"
+                value={comp.weight_g || ''}
+                onChange={e => updateComponent(idx, 'weight_g', e.target.value)}
+                placeholder="g"
+              />
+              <span className="component-pct">{comp.percentage ?? 0}%</span>
+              <button className="btn-icon" onClick={() => removeComponent(idx)}>×</button>
+            </div>
+          );
+        })}
         <button className="btn-ghost" onClick={addComponent}>+ Add Component</button>
       </div>
     </div>
