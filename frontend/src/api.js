@@ -1,8 +1,8 @@
 // In development, Vite proxies /api → localhost:3001
 // In production, set VITE_API_URL to your Railway backend URL (no trailing slash)
 const BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api';
+  ? `${import.meta.env.VITE_API_URL}api`
+  : 'api';
 
 async function request(method, path, body) {
   const res = await fetch(`${BASE}${path}`, {
