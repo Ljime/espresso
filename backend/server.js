@@ -204,19 +204,22 @@ app.get('/api/export', async (req, res) => {
     if (scope === 'last10' || scope === 'last20') {
       const limit = scope === 'last10' ? 10 : 20;
       const r = await pool.query(
-        `SELECT data FROM shots ORDER BY created_at DESC LIMIT $1`,
+        `SELECT data || jsonb_build_object('id', id, 'created_at', created_at) AS data
+         FROM shots ORDER BY created_at DESC LIMIT $1`,
         [limit]
       );
       shotRows = r.rows.map(r => r.data);
     } else if (scope === 'profile') {
       const r = await pool.query(
-        `SELECT data FROM shots WHERE profile_id = $1 ORDER BY created_at DESC`,
+        `SELECT data || jsonb_build_object('id', id, 'created_at', created_at) AS data
+         FROM shots WHERE profile_id = $1 ORDER BY created_at DESC`,
         [profile_id]
       );
       shotRows = r.rows.map(r => r.data);
     } else if (scope === 'daterange') {
       const r = await pool.query(
-        `SELECT data FROM shots
+        `SELECT data || jsonb_build_object('id', id, 'created_at', created_at) AS data
+         FROM shots
          WHERE created_at >= $1 AND created_at < $2::date + interval '1 day'
          ORDER BY created_at DESC`,
         [date_from, date_to]
@@ -225,7 +228,8 @@ app.get('/api/export', async (req, res) => {
     } else {
       // all
       const r = await pool.query(
-        `SELECT data FROM shots ORDER BY created_at DESC`
+        `SELECT data || jsonb_build_object('id', id, 'created_at', created_at) AS data
+         FROM shots ORDER BY created_at DESC`
       );
       shotRows = r.rows.map(r => r.data);
     }
@@ -240,7 +244,8 @@ app.get('/api/export', async (req, res) => {
       const ids = [...profileIds];
       const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
       const pr = await pool.query(
-        `SELECT data FROM profiles WHERE id IN (${placeholders})`, ids
+        `SELECT data || jsonb_build_object('id', id, 'created_at', created_at) AS data
+         FROM profiles WHERE id IN (${placeholders})`, ids
       );
       profileRows = pr.rows.map(r => r.data);
 
@@ -257,7 +262,8 @@ app.get('/api/export', async (req, res) => {
         const cids = [...componentIds];                          // ← fixed: use cids not ids
         const cPlaceholders = cids.map((_, i) => `$${i + 1}`).join(',');
         const cr = await pool.query(
-          `SELECT data FROM profiles WHERE id IN (${cPlaceholders})`, cids
+          `SELECT data || jsonb_build_object('id', id, 'created_at', created_at) AS data
+           FROM profiles WHERE id IN (${cPlaceholders})`, cids
         );
         profileRows.push(...cr.rows.map(r => r.data));
       }
